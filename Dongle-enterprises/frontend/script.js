@@ -438,7 +438,7 @@ form.reset();
 }else{
 
 
-alert("Something went wrong");
+//alert("Something went wrong");
 
 
 }
@@ -453,7 +453,7 @@ catch(error){
 console.log(error);
 
 
-alert("thank you");
+//alert("thank you");
 
 
 }
