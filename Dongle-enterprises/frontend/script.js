@@ -379,7 +379,7 @@ try{
 
 
 let response =
-await fetch("https://dongle-enterprises.onrender.com",{
+await fetch("https://dongle-enterprises.onrender.com/submit",{
 
 
 method:"POST",
@@ -453,7 +453,7 @@ catch(error){
 console.log(error);
 
 
-alert("Backend server is not running");
+alert("Backend server is punda");
 
 
 }
