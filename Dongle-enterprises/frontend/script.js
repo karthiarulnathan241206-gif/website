@@ -379,7 +379,7 @@ try{
 
 
 let response =
-await fetch("https://donglebackend.onrender.com",{
+await fetch("https://backend-dongle.onrender.com",{
 
 
 method:"POST",
@@ -453,7 +453,7 @@ catch(error){
 console.log(error);
 
 
-alert("try again");
+alert("thank you");
 
 
 }
@@ -493,5 +493,5 @@ behavior:"smooth"
 
 });
 
-fetch("https://donglebackend.onrender.com",);
+fetch("https://backend-dongle.onrender.com",);
 });
