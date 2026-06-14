@@ -379,7 +379,7 @@ try{
 
 
 let response =
-await fetch("https://dongle-enterprises.onrender.com/submit",{
+await fetch("https://dongle-enterprises.onrender.com",{
 
 
 method:"POST",
