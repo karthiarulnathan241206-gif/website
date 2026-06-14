@@ -453,7 +453,7 @@ catch(error){
 console.log(error);
 
 
-alert("Backend server is punda");
+alert("try again");
 
 
 }
@@ -493,5 +493,5 @@ behavior:"smooth"
 
 });
 
-fetch("http://localhost:5000/contact",);
+fetch("https://donglebackend.onrender.com",);
 });
