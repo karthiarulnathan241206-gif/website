@@ -1,9 +1,11 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
 import os
+import json
 
 
 app = Flask(__name__)
@@ -24,15 +26,18 @@ if not os.path.exists(CREDENTIALS_FILE):
 def get_sheet():
     """Connect to Google Sheet and return the worksheet"""
     try:
-        import json, os
-        creds_json = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
-        credentials = Credentials.from_service_account_info(creds_json, scopes=[...])
-        client = gspread.authorize(creds)
+        creds_json_str = os.environ.get("GOOGLE_CREDENTIALS")
+        if not creds_json_str:
+            raise ValueError("GOOGLE_CREDENTIALS environment variable not set")
+        
+        creds_json = json.loads(creds_json_str)
+        credentials = Credentials.from_service_account_info(creds_json, scopes=SCOPES)
+        client = gspread.authorize(credentials)
         spreadsheet = client.open_by_key(SHEET_ID)
         worksheet = spreadsheet.sheet1  # Get the first sheet
         return worksheet
-    except FileNotFoundError as e:
-        print(f"❌ File Error: {e}")
+    except ValueError as e:
+        print(f"❌ Configuration Error: {e}")
         return None
     except Exception as e:
         print(f"❌ Error connecting to Google Sheets: {e}")
