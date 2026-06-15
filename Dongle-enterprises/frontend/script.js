@@ -248,3 +248,72 @@ behavior:"smooth"
 });
 
 });
+
+
+// ===============================
+// Contact Form Handler
+// ===============================
+
+const contactForm = document.getElementById("contactForm");
+const submitBtn = document.querySelector(".btn-submit");
+
+if (contactForm) {
+  contactForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // Get form data
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const businessType = document.getElementById("businessType").value.trim();
+    const message = document.getElementById("message").value.trim();
+
+    // Validate required fields
+    if (!name || !email) {
+      alert("❌ Name and Email are required!");
+      return;
+    }
+
+    // Show loading state
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = "📤 Sending...";
+    submitBtn.disabled = true;
+
+    try {
+      // Send data to backend
+      const response = await fetch("https://donglebackend.onrender.com/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name,
+          phone: phone,
+          email: email,
+          businessType: businessType,
+          message: message,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Success
+        alert("✅ Message received! We'll contact you soon.");
+        contactForm.reset();
+        console.log("✅ Data sent successfully:", result);
+      } else {
+        // Error from backend
+        alert(`❌ Error: ${result.message || "Failed to send message"}`);
+        console.error("Backend error:", result);
+      }
+    } catch (error) {
+      console.error("❌ Network error:", error);
+      alert("❌ Failed to send message. Please try again or contact us directly.");
+    } finally {
+      // Restore button state
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    }
+  });
+}
