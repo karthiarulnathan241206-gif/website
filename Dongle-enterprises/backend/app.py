@@ -17,27 +17,26 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapi
 SHEET_ID = "13OCzn9pQjZ9rrit_kW9igpS0Z-DnRhhMeDgIkc7r-jc"
 CREDENTIALS_FILE = "credentials.json"
 
-# Check if credentials file exists
-if not os.path.exists(CREDENTIALS_FILE):
-    print(f"⚠️  Warning: {CREDENTIALS_FILE} not found in current directory")
-    print(f"Current directory: {os.getcwd()}")
 
 
 def get_sheet():
     """Connect to Google Sheet and return the worksheet"""
     try:
-        creds_json_str = os.environ.get("GOOGLE_CREDENTIALS")
-        if not creds_json_str:
-            raise ValueError("GOOGLE_CREDENTIALS environment variable not set")
-        
-        creds_json = json.loads(creds_json_str)
-        credentials = Credentials.from_service_account_info(creds_json, scopes=SCOPES)
-        client = gspread.authorize(credentials)
+        def get_sheet():
+    try:
+        creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(
+            creds_dict,
+            SCOPES
+        )
+
+        client = gspread.authorize(creds)
         spreadsheet = client.open_by_key(SHEET_ID)
-        worksheet = spreadsheet.sheet1  # Get the first sheet
-        return worksheet
-    except ValueError as e:
-        print(f"❌ Configuration Error: {e}")
+        return spreadsheet.sheet1
+
+    except Exception as e:
+        print(f"❌ Error connecting to Google Sheets: {e}")
         return None
     except Exception as e:
         print(f"❌ Error connecting to Google Sheets: {e}")
@@ -124,7 +123,6 @@ if __name__ == "__main__":
     print("🚀 Starting Backend Server")
     print("=" * 50)
     print(f"📁 Working Directory: {os.getcwd()}")
-    print(f"📄 Credentials File: {CREDENTIALS_FILE}")
     print(f"📊 Google Sheet ID: {SHEET_ID}")
     print("=" * 50)
     print(f"✅ Health Check: http://localhost:{port}/")
