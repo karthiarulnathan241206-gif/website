@@ -24,10 +24,9 @@ if not os.path.exists(CREDENTIALS_FILE):
 def get_sheet():
     """Connect to Google Sheet and return the worksheet"""
     try:
-        if not os.path.exists(CREDENTIALS_FILE):
-            raise FileNotFoundError(f"{CREDENTIALS_FILE} not found")
-        
-        creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, SCOPES)
+        import json, os
+        creds_json = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+        credentials = Credentials.from_service_account_info(creds_json, scopes=[...])
         client = gspread.authorize(creds)
         spreadsheet = client.open_by_key(SHEET_ID)
         worksheet = spreadsheet.sheet1  # Get the first sheet
