@@ -30,16 +30,27 @@ CREDENTIALS_FILE = "credentials.json"
 
 # Check if credentials exist (file or environment variable)
 credentials_available = False
+credentials_source = "None"
 
 if os.path.exists(CREDENTIALS_FILE):
     credentials_available = True
+    credentials_source = "File"
     print(f"✅ Using credentials from file: {CREDENTIALS_FILE}")
 elif os.getenv("GOOGLE_CREDENTIALS_JSON"):
-    credentials_available = True
-    print(f"✅ Using credentials from environment variable: GOOGLE_CREDENTIALS_JSON")
+    try:
+        test_json = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
+        if "type" in test_json and test_json["type"] == "service_account":
+            credentials_available = True
+            credentials_source = "Environment Variable"
+            print(f"✅ Using credentials from environment variable: GOOGLE_CREDENTIALS_JSON")
+        else:
+            print(f"⚠️  Environment variable exists but is not valid service account credentials")
+    except json.JSONDecodeError as e:
+        print(f"⚠️  GOOGLE_CREDENTIALS_JSON environment variable is not valid JSON: {e}")
 else:
-    print(f"⚠️  Warning: Credentials not found in file or environment variable")
+    print(f"❌ Credentials not found!")
     print(f"📝 Please set GOOGLE_CREDENTIALS_JSON environment variable on Render")
+    print(f"📝 Instructions: https://dashboard.render.com/ → Your Service → Settings → Environment Variables")
 
 
 def get_sheet():
@@ -49,21 +60,36 @@ def get_sheet():
         
         # Try to load credentials from file first
         if os.path.exists(CREDENTIALS_FILE):
+            print("📂 Loading credentials from file...")
             creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, SCOPES)
         # Try to load from environment variable
         elif os.getenv("GOOGLE_CREDENTIALS_JSON"):
+            print("🔐 Loading credentials from environment variable...")
             creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
-            creds_dict = json.loads(creds_json)
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPES)
+            print(f"📝 Credentials JSON length: {len(creds_json)} characters")
+            
+            try:
+                creds_dict = json.loads(creds_json)
+                print(f"✅ JSON parsed successfully. Type: {creds_dict.get('type')}")
+                creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPES)
+            except json.JSONDecodeError as e:
+                print(f"❌ JSON Parse Error: {e}")
+                print(f"First 100 chars: {creds_json[:100]}")
+                raise
         else:
             raise FileNotFoundError("Credentials not found in file or environment variable")
         
         if creds is None:
-            raise ValueError("Failed to create credentials")
+            raise ValueError("Failed to create credentials object")
         
+        print("🔑 Authorizing with gspread...")
         client = gspread.authorize(creds)
+        
+        print(f"📊 Opening spreadsheet with ID: {SHEET_ID}")
         spreadsheet = client.open_by_key(SHEET_ID)
-        worksheet = spreadsheet.sheet1  # Get the first sheet
+        worksheet = spreadsheet.sheet1
+        
+        print("✅ Successfully connected to Google Sheet!")
         return worksheet
         
     except FileNotFoundError as e:
@@ -73,7 +99,7 @@ def get_sheet():
         print(f"❌ JSON Decode Error: Invalid credentials JSON - {e}")
         return None
     except Exception as e:
-        print(f"❌ Error connecting to Google Sheets: {e}")
+        print(f"❌ Error connecting to Google Sheets: {type(e).__name__}: {e}")
         return None
 
 
@@ -83,7 +109,24 @@ def health():
     return jsonify({
         "status": "✅ Backend is running", 
         "url": "https://donglebackend.onrender.com",
-        "credentials": "✅ Available" if credentials_available else "❌ Missing"
+        "credentials": "✅ Available" if credentials_available else "❌ Missing",
+        "credentials_source": credentials_source
+    }), 200
+
+
+@app.route("/debug", methods=["GET"])
+def debug():
+    """Debug endpoint to check credentials status"""
+    env_var_exists = bool(os.getenv("GOOGLE_CREDENTIALS_JSON"))
+    file_exists = os.path.exists(CREDENTIALS_FILE)
+    
+    return jsonify({
+        "file_exists": file_exists,
+        "env_var_exists": env_var_exists,
+        "credentials_available": credentials_available,
+        "credentials_source": credentials_source,
+        "sheet_id": SHEET_ID,
+        "cwd": os.getcwd()
     }), 200
 
 
@@ -131,15 +174,15 @@ def contact():
                 print("✅ Data added to Google Sheet successfully\n")
                 return jsonify({"success": True, "message": "Message received and saved"}), 200
             except Exception as e:
-                print(f"⚠️  Error appending to sheet: {e}\n")
-                return jsonify({"success": False, "message": f"Failed to save to sheet: {str(e)}"}), 500
+                print(f"⚠️  Error appending to sheet: {type(e).__name__}: {e}\n")
+                return jsonify({"success": False, "message": f"Failed to save to sheet"}), 500
         else:
             print("⚠️  Warning: Could not connect to Google Sheet\n")
-            return jsonify({"success": False, "message": "Failed to connect to sheet. Please check backend credentials."}), 500
+            return jsonify({"success": False, "message": "Failed to connect to sheet. Check backend logs."}), 500
         
     except Exception as e:
-        print(f"❌ Unexpected error: {e}\n")
-        return jsonify({"success": False, "message": f"Server error: {str(e)}"}), 500
+        print(f"❌ Unexpected error: {type(e).__name__}: {e}\n")
+        return jsonify({"success": False, "message": f"Server error"}), 500
 
 
 @app.errorhandler(404)
@@ -167,8 +210,10 @@ if __name__ == "__main__":
     print(f"📄 Credentials File: {CREDENTIALS_FILE}")
     print(f"📊 Google Sheet ID: {SHEET_ID}")
     print(f"🔐 Credentials Available: {'✅ Yes' if credentials_available else '❌ No'}")
+    print(f"📍 Credentials Source: {credentials_source}")
     print("=" * 50)
     print(f"✅ Health Check: https://donglebackend.onrender.com/")
+    print(f"🔍 Debug: https://donglebackend.onrender.com/debug")
     print(f"📝 Contact API: https://donglebackend.onrender.com/contact (POST)")
     print("=" * 50 + "\n")
 
