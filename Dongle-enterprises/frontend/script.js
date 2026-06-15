@@ -452,7 +452,7 @@ catch(error){
 
 console.log(error);
 
-alert("karthi punda");
+alert("error");
 
 
 }
