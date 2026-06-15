@@ -379,7 +379,7 @@ try{
 
 
 let response =
-await fetch("https://backend-dongle.onrender.com",{
+await fetch("https://donglebackend.onrender.com",{
 
 
 method:"POST",
@@ -492,5 +492,5 @@ behavior:"smooth"
 
 });
 
-fetch("https://backend-dongle.onrender.com",);
+fetch("https://donglebackend.onrender.com",);
 });
