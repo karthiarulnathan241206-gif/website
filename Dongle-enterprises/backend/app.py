@@ -8,7 +8,18 @@ import os
 
 app = Flask(__name__)
 
-CORS(app)
+# Configure CORS with specific frontend URL
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "https://dongle-enterprises.onrender.com",
+            "http://localhost:3000",
+            "http://localhost:5000"
+        ],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # Google Sheets Configuration
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
@@ -43,12 +54,16 @@ def get_sheet():
 @app.route("/", methods=["GET"])
 def health():
     """Health check endpoint"""
-    return jsonify({"status": "✅ Backend is running", "port": 5000}), 200
+    return jsonify({"status": "✅ Backend is running", "url": "https://donglebackend.onrender.com"}), 200
 
 
-@app.route("/contact", methods=["POST"])
+@app.route("/contact", methods=["POST", "OPTIONS"])
 def contact():
     """Handle contact form submissions and save to Google Sheet"""
+    # Handle preflight requests
+    if request.method == "OPTIONS":
+        return jsonify({"success": True}), 200
+    
     try:
         data = request.json
         
@@ -84,14 +99,13 @@ def contact():
             try:
                 worksheet.append_row([timestamp, name, phone, email, business_type, message])
                 print("✅ Data added to Google Sheet successfully\n")
+                return jsonify({"success": True, "message": "Message received and saved"}), 200
             except Exception as e:
                 print(f"⚠️  Error appending to sheet: {e}\n")
                 return jsonify({"success": False, "message": "Failed to save to sheet"}), 500
         else:
             print("⚠️  Warning: Could not connect to Google Sheet\n")
             return jsonify({"success": False, "message": "Failed to connect to sheet"}), 500
-        
-        return jsonify({"success": True, "message": "Message received and saved"}), 200
         
     except Exception as e:
         print(f"❌ Unexpected error: {e}\n")
@@ -123,12 +137,8 @@ if __name__ == "__main__":
     print(f"📄 Credentials File: {CREDENTIALS_FILE}")
     print(f"📊 Google Sheet ID: {SHEET_ID}")
     print("=" * 50)
-    print(f"✅ Health Check: http://localhost:{port}/")
-    print(f"📝 Contact API: http://localhost:{port}/contact (POST)")
+    print(f"✅ Health Check: https://donglebackend.onrender.com/")
+    print(f"📝 Contact API: https://donglebackend.onrender.com/contact (POST)")
     print("=" * 50 + "\n")
 
     app.run(host="0.0.0.0", port=port, debug=debug)
-
-
-
-     
